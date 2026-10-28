@@ -37,6 +37,11 @@ export const projects = [
       'Most websites peak on launch day and slowly decay after. Plugins age, pages slow down, content drifts out of date. Sitekeep Care is our answer: a dedicated team watching performance, uptime and security every day, and shipping small improvements every month.',
       'Every plan includes monitoring, backups, Core Web Vitals tuning, content updates and a quarterly review where we look at what is working and what to build next.',
     ],
+    more: [
+      { label: 'Strategy', title: 'Plans built around what breaks', body: 'We looked at two years of support tickets across our clients and built Care around the things that actually go wrong: slow pages, expired plugins, stale content.' },
+      { label: 'Design', title: 'A dashboard you can read in ten seconds', body: 'Every client gets a monthly report with three numbers that matter, plus a short list of what we shipped and what is next.' },
+      { label: 'Build', title: 'Monitoring that wakes us, not you', body: 'Uptime, Core Web Vitals and security checks run every few minutes. Alerts go to our on-call engineer before anyone notices.' },
+    ],
     stats: [
       { value: '99.99%', label: 'Uptime across care clients' },
       { value: '< 1.2s', label: 'Median LCP after tuning' },
@@ -65,6 +70,11 @@ export const projects = [
     body: [
       'Northwind roasts small batches and ships across the country. Their old shop made subscribing harder than buying once. We redesigned the product pages around the subscription, rebuilt checkout and added a self-serve portal for pausing and swapping roasts.',
       'The new storefront loads in under a second on mobile and has been running on Sitekeep Care since launch.',
+    ],
+    more: [
+      { label: 'Strategy', title: 'Subscriptions first', body: 'Most revenue came from repeat buyers, so the new site puts the subscription right next to every bag and makes pausing it painless.' },
+      { label: 'Design', title: 'Warm, roasted, unhurried', body: 'Big product photography, a palette pulled from the roastery and copy that sounds like the people behind the counter.' },
+      { label: 'Build', title: 'Shopify, tuned for speed', body: 'A custom Shopify theme with lazy-loaded media and a cart drawer that never reloads the page.' },
     ],
     stats: [
       { value: '2.1×', label: 'Repeat orders' },
@@ -95,6 +105,11 @@ export const projects = [
       'Patients were calling to book because the website was too hard to use on a phone. We designed a three-step booking flow, connected it to the clinics’ scheduling system, and tested it with real patients of every age.',
       'Phone bookings dropped by a third in the first month, freeing reception staff for patients in the room.',
     ],
+    more: [
+      { label: 'Strategy', title: 'Three taps to a booking', body: 'We mapped every step patients took to book and cut it from eleven screens to three.' },
+      { label: 'Design', title: 'Calm under pressure', body: 'Soft colours, large type and plain language, tested with patients aged 19 to 84.' },
+      { label: 'Build', title: 'Live availability', body: 'The booking flow talks directly to the clinic system, so the times you see are the times you get.' },
+    ],
     stats: [
       { value: '3', label: 'Taps to book' },
       { value: '−34%', label: 'Phone bookings' },
@@ -122,6 +137,11 @@ export const projects = [
     body: [
       'Halcyon’s projects are calm, precise and full of light. We built a site that feels the same: slow, deliberate transitions, generous space and photography that fills the screen.',
       'Everything is editable in the CMS, so new projects go live the day they are photographed.',
+    ],
+    more: [
+      { label: 'Strategy', title: 'Let the work lead', body: 'The old site buried the photography under menus. The new one opens straight onto the latest shoot.' },
+      { label: 'Design', title: 'Quiet frames', body: 'A thin, neutral interface that disappears around the images, with generous whitespace and slow transitions.' },
+      { label: 'Build', title: 'Upload Monday, live Tuesday', body: 'A simple CMS workflow lets the studio publish new series without touching code.' },
     ],
     stats: [
       { value: '+63%', label: 'Time on site' },
@@ -151,6 +171,11 @@ export const projects = [
       'We rewrote every page in plain English, introduced the people behind the firm, and gave each practice area a clear next step.',
       'Organic traffic is up and the enquiry form now asks the right questions, so lawyers spend less time qualifying leads.',
     ],
+    more: [
+      { label: 'Strategy', title: 'Fewer, better enquiries', body: 'We rewrote every practice page around the questions clients ask in the first call.' },
+      { label: 'Design', title: 'Serious, not stiff', body: 'A classic serif paired with clean layouts, so the firm feels established and approachable.' },
+      { label: 'Build', title: 'Smart intake form', body: 'Enquiries are routed to the right partner automatically, with the details they need up front.' },
+    ],
     stats: [
       { value: '+82%', label: 'Organic traffic' },
       { value: '+40%', label: 'Qualified enquiries' },
@@ -178,6 +203,11 @@ export const projects = [
     body: [
       'Orbit wanted people to join from their phone in the car park. We designed a joining flow that takes under two minutes and a portal where members book classes, freeze and upgrade.',
     ],
+    more: [
+      { label: 'Strategy', title: 'Classes, not features', body: 'Members come for the timetable, so it now sits front and centre on every page.' },
+      { label: 'Design', title: 'Energy you can feel', body: 'Bold type, punchy colour and short looping clips of real classes.' },
+      { label: 'Build', title: 'Booking in the browser', body: 'Members book, cancel and join waitlists without downloading an app.' },
+    ],
     stats: [
       { value: '1m 48s', label: 'Average time to join' },
       { value: '+57%', label: 'Online sign-ups' },
@@ -204,6 +234,11 @@ export const projects = [
     summary: 'A coastal hotel group moved bookings away from third-party sites and onto their own.',
     body: [
       'We redesigned the booking journey around the rooms and the view, integrated their booking engine without the clunky iframe, and built landing pages for every season.',
+    ],
+    more: [
+      { label: 'Strategy', title: 'Book direct', body: 'Clear rates and perks for booking direct cut reliance on travel sites.' },
+      { label: 'Design', title: 'A postcard from the coast', body: 'Each hotel gets its own colour story while sharing one calm system.' },
+      { label: 'Build', title: 'One site, four hotels', body: 'A shared component library means a new property launches in days, not months.' },
     ],
     stats: [
       { value: '+36%', label: 'Direct bookings' },
@@ -235,6 +270,11 @@ export const projects = [
     summary: 'Pre-orders and click & collect for a neighbourhood bakery that kept selling out by 10am.',
     body: [
       'A small site with one job: let regulars reserve their loaf before it sells out. Orders print straight to the kitchen each morning.',
+    ],
+    more: [
+      { label: 'Strategy', title: 'Pre-order to sell out', body: 'Weekend pre-orders let the bakery plan bakes and stop turning people away.' },
+      { label: 'Design', title: 'Flour on the lens', body: 'Hand-drawn touches and natural light photography straight from the kitchen.' },
+      { label: 'Build', title: 'Orders straight to the oven', body: 'Orders print as a bake list each morning, grouped by loaf.' },
     ],
     stats: [
       { value: '300+', label: 'Pre-orders a week' },

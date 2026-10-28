@@ -6,39 +6,70 @@ import { $, $$, escapeHTML, twoTone } from './utils.js'
 export function initSections({ site, projects, bus, reduced }) {
   initStatement(site, projects, bus, reduced)
   initTestimonials(site, reduced)
-  initApproach(site)
+  initApproach(site, reduced)
   initTeam(site, reduced)
   initFooter(site)
   initReveals(reduced)
 }
 
-/* ── "Sitekeep designs, builds and keeps [websites] …" — the word follows the active project ── */
+/* ── "Sitekeep designs, builds and keeps [websites] …" — the word follows the active project ──
+   The word is set in mono and swaps letter by letter. Its slot snaps to the new word's width
+   straight away, and every other word FLIPs from where it was, so when the line breaks change
+   the words glide to their new lines instead of jumping. */
 function initStatement(site, projects, bus, reduced) {
-  $('[data-statement-before]').textContent = site.statement.before
-  $('[data-statement-after]').textContent = site.statement.after
+  const title = $('[data-statement-title]')
+  const words = (text) => text.split(' ').map((w) => `<span class="statement__w">${escapeHTML(w)}</span>`).join(' ')
+  title.innerHTML = `${words(site.statement.before)} <span class="statement__slot"><span class="statement__sizer" aria-hidden="true"></span><span class="statement__layer"></span></span> ${words(site.statement.after)}`
   $('[data-statement-sub]').textContent = site.statement.sub
-  const wrap = $('[data-statement-word]')
+  const slot = $('.statement__slot', title)
+  const sizer = $('.statement__sizer', title)
+  const layer = $('.statement__layer', title)
+  const movers = [...$$('.statement__w', title), slot]
   let current = -1
+
+  const letters = (text) => [...text].map((ch) => `<span class="statement__ch">${ch === ' ' ? '&nbsp;' : escapeHTML(ch)}</span>`).join('')
 
   const show = (i) => {
     if (i === current) return
+    const first = current === -1
     current = i
     const p = projects[i]
-    const span = document.createElement('span')
-    span.className = 'statement__word-inner'
-    span.textContent = p.industry
-    span.style.color = `color-mix(in oklab, ${p.accent} 84%, #000)` // keeps light accents (yellow) readable on white
-    const prev = wrap.querySelector('.statement__word-inner:not(.is-leaving)')
-    wrap.appendChild(span)
+
+    // FLIP: where everything is now (including any glide still in flight)…
+    const before = movers.map((el) => el.getBoundingClientRect())
+    gsap.killTweensOf(movers)
+    gsap.set(movers, { x: 0, y: 0 })
+    sizer.textContent = p.industry
+    title.setAttribute('aria-label', `${site.statement.before} ${p.industry} ${site.statement.after}`)
+    // …and glide from there to wherever the new width puts it.
+    if (!first && !reduced) {
+      movers.forEach((el, k) => {
+        const r = el.getBoundingClientRect()
+        const dx = before[k].left - r.left
+        const dy = before[k].top - r.top
+        if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) gsap.fromTo(el, { x: dx, y: dy }, { x: 0, y: 0, duration: 0.85, ease: 'expo.out' })
+      })
+    }
+
+    const word = document.createElement('span')
+    word.className = 'statement__word'
+    word.style.color = `color-mix(in oklab, ${p.accent} 84%, #000)` // keeps light accents (yellow) readable on white
+    word.innerHTML = letters(p.industry)
+    const prev = layer.querySelector('.statement__word:not(.is-leaving)')
+    layer.appendChild(word)
     if (!prev || reduced) return prev?.remove()
     prev.classList.add('is-leaving')
-    gsap.killTweensOf(wrap.children)
-    ;[...wrap.querySelectorAll('.is-leaving')].forEach((el) => el !== prev && el.remove())
-    gsap.to(prev, { yPercent: -100, opacity: 0, filter: 'blur(6px)', duration: 0.5, ease: 'power3.in', onComplete: () => prev.remove() })
-    gsap.fromTo(span, { yPercent: 100, opacity: 0, filter: 'blur(6px)' }, { yPercent: 0, opacity: 1, filter: 'blur(0px)', duration: 0.8, delay: 0.15, ease: 'expo.out' })
+    ;[...layer.querySelectorAll('.is-leaving')].forEach((el) => el !== prev && el.remove())
+    gsap.to(prev.children, { yPercent: -45, opacity: 0, filter: 'blur(8px)', duration: 0.35, stagger: 0.012, ease: 'power2.in', onComplete: () => prev.remove() })
+    gsap.fromTo(
+      word.children,
+      { yPercent: 55, opacity: 0, filter: 'blur(8px)' },
+      { yPercent: 0, opacity: 1, filter: 'blur(0px)', duration: 0.7, delay: 0.12, stagger: 0.025, ease: 'expo.out', clearProps: 'filter' },
+    )
   }
   bus.on('project', show)
   show(0)
+  addEventListener('resize', () => gsap.set(movers, { x: 0, y: 0 }))
 
   // Once the visitor has scrolled past the stack, keep cycling through industries.
   let timer = null
@@ -48,7 +79,7 @@ function initStatement(site, projects, bus, reduced) {
     end: 'bottom top',
     onToggle: (self) => {
       clearInterval(timer)
-      if (self.isActive && !reduced) timer = setInterval(() => show((current + 1) % projects.length), 2200)
+      if (self.isActive && !reduced) timer = setInterval(() => show((current + 1) % projects.length), 2600)
     },
   })
 }
@@ -99,7 +130,7 @@ function initTestimonials(site, reduced) {
 }
 
 /* ── Approach accordion ── */
-function initApproach(site) {
+function initApproach(site, reduced) {
   const a = site.approach
   $('[data-approach-title]').innerHTML = twoTone(a.title)
   $('[data-approach-body]').textContent = a.body
@@ -138,6 +169,89 @@ function initApproach(site) {
       setTimeout(() => ScrollTrigger.refresh(), 600)
     })
   })
+  initGlowLoop(acc, reduced)
+}
+
+/**
+ * A short streak of light that travels around the accordion's outline, with a blurred halo.
+ * The loop is a rounded rect drawn in an SVG over the card; each streak is six dashes of
+ * decreasing length that end at the same point, so the tail fades out behind the head.
+ * Holes around the step icons keep the streak from running over them.
+ */
+function initGlowLoop(acc, reduced) {
+  if (reduced) return
+  const NS = 'http://www.w3.org/2000/svg'
+  const svg = document.createElementNS(NS, 'svg')
+  svg.setAttribute('class', 'glow-loop')
+  svg.setAttribute('aria-hidden', 'true')
+  svg.innerHTML = `
+    <defs>
+      <filter id="glow-loop-blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5" /></filter>
+      <clipPath id="glow-loop-clip"><path fill-rule="evenodd" clip-rule="evenodd" /></clipPath>
+    </defs>
+    <g clip-path="url(#glow-loop-clip)">
+      <g class="glow-loop__halo" filter="url(#glow-loop-blur)"></g>
+      <g class="glow-loop__line"></g>
+    </g>`
+  acc.parentElement.appendChild(svg)
+  const TAIL = [1, 0.8, 0.6, 0.42, 0.26, 0.12] // dash length factors, longest (faintest) first
+  const mk = (group, width, opacities) =>
+    TAIL.map((f, k) => {
+      const path = document.createElementNS(NS, 'path')
+      path.setAttribute('stroke-width', width)
+      path.setAttribute('stroke-linecap', 'round')
+      path.setAttribute('opacity', opacities[k])
+      group.appendChild(path)
+      return path
+    })
+  const halo = mk(svg.querySelector('.glow-loop__halo'), 6, [0.08, 0.12, 0.18, 0.26, 0.36, 0.5])
+  const line = mk(svg.querySelector('.glow-loop__line'), 1.5, [0.1, 0.2, 0.34, 0.52, 0.74, 1])
+  const paths = [...halo, ...line]
+  const clip = svg.querySelector('clipPath path')
+  let perimeter = 1
+  let streak = 120
+
+  const build = () => {
+    const box = acc.parentElement.getBoundingClientRect()
+    const r = acc.getBoundingClientRect()
+    const x = r.left - box.left
+    const y = r.top - box.top
+    const w = r.width
+    const h = r.height
+    const rad = Math.min(30, h / 2)
+    // start top-left so the streak sweeps along the top edge first
+    const d = `M ${x + rad} ${y} H ${x + w - rad} A ${rad} ${rad} 0 0 1 ${x + w} ${y + rad} V ${y + h - rad} A ${rad} ${rad} 0 0 1 ${x + w - rad} ${y + h} H ${x + rad} A ${rad} ${rad} 0 0 1 ${x} ${y + h - rad} V ${y + rad} A ${rad} ${rad} 0 0 1 ${x + rad} ${y} Z`
+    paths.forEach((p) => p.setAttribute('d', d))
+    perimeter = line[0].getTotalLength()
+    streak = Math.min(150, perimeter * 0.12)
+    const holes = $$('.accordion__icon', acc)
+      .map((ic) => {
+        const b = ic.getBoundingClientRect()
+        return `M ${b.left - box.left - 8} ${b.top - box.top - 8} h ${b.width + 16} v ${b.height + 16} h ${-(b.width + 16)} Z`
+      })
+      .join(' ')
+    clip.setAttribute('d', `M -50 -50 H ${box.width + 50} V ${box.height + 50} H -50 Z ${holes}`)
+  }
+
+  const head = { p: 0 }
+  const draw = () => {
+    paths.forEach((path, k) => {
+      const len = streak * TAIL[k % TAIL.length]
+      path.setAttribute('stroke-dasharray', `${len} ${perimeter - len}`)
+      path.setAttribute('stroke-dashoffset', String(-(head.p - len)))
+    })
+  }
+  build()
+  const loop = gsap.to(head, { p: '+=1', duration: 1, ease: 'none', repeat: -1, paused: true, onUpdate: draw })
+  // constant speed whatever the card size: one lap ≈ perimeter / 190 px per second
+  const retime = () => {
+    build()
+    loop.vars.p = `+=${perimeter}`
+    loop.invalidate().duration(perimeter / 190)
+  }
+  retime()
+  new ResizeObserver(retime).observe(acc)
+  ScrollTrigger.create({ trigger: acc, start: 'top bottom', end: 'bottom top', onToggle: (self) => (self.isActive ? loop.play() : loop.pause()) })
 }
 
 /* ── Team: overlapping portrait bubbles that rotate, client logo marquee ── */
@@ -158,12 +272,12 @@ function initTeam(site, reduced) {
   const els = $$('.bubble', bubbles)
   let front = 0
 
-  // slot 0 = front/large, 1 & 2 = behind, 3+ hidden
+  // slot 0 = front (right), 1 & 2 = smaller and blurred behind it to the left, 3+ hidden
   const slots = [
     { xPercent: 0, yPercent: 0, scale: 1, filter: 'blur(0px) grayscale(1)', opacity: 1, zIndex: 4 },
-    { xPercent: -62, yPercent: -46, scale: 0.62, filter: 'blur(3px) grayscale(1)', opacity: 0.9, zIndex: 3 },
-    { xPercent: -118, yPercent: -30, scale: 0.5, filter: 'blur(5px) grayscale(1)', opacity: 0.75, zIndex: 2 },
-    { xPercent: -150, yPercent: -10, scale: 0.35, filter: 'blur(8px) grayscale(1)', opacity: 0, zIndex: 1 },
+    { xPercent: -76, yPercent: 16, scale: 0.7, filter: 'blur(3px) grayscale(1)', opacity: 0.85, zIndex: 3 },
+    { xPercent: -128, yPercent: 4, scale: 0.6, filter: 'blur(6px) grayscale(1)', opacity: 0.7, zIndex: 2 },
+    { xPercent: -170, yPercent: 10, scale: 0.4, filter: 'blur(8px) grayscale(1)', opacity: 0, zIndex: 1 },
   ]
   const place = (instant) => {
     els.forEach((el, k) => {
@@ -214,7 +328,7 @@ function initReveals(reduced) {
     '.testimonials__card',
     '.testimonials__tiles',
     '.approach__intro > *',
-    '.accordion',
+    '.approach__side',
     '.team__intro > *',
     '.team__people',
   ]

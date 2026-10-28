@@ -8,6 +8,7 @@ export const icons = {
   arrowRight: svg('<path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>'),
   arrowUpRight: svg('<path d="M7 17 17 7"/><path d="M8 7h9v9"/>'),
   chevronRight: svg('<path d="m9 6 6 6-6 6"/>'),
+  sparkle: svg('<path d="M12 4v4M12 16v4M4 12h4M16 12h4"/><circle cx="6.5" cy="6.5" r=".6"/><circle cx="17.5" cy="6.5" r=".6"/><circle cx="6.5" cy="17.5" r=".6"/><circle cx="17.5" cy="17.5" r=".6"/>'),
   plus: svg('<path d="M12 5v14"/><path d="M5 12h14"/>'),
   expand: svg('<path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/>'),
   check: svg('<path d="m5 12.5 4.5 4.5L19 7.5"/>'),

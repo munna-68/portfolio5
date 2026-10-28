@@ -37,14 +37,13 @@
     <main class="main" data-main>
       <section class="showcase" id="work" data-showcase aria-label="Selected work">
         <div class="showcase__pin">
-          <div class="showcase__stage">
+          <div class="showcase__stage" data-stage data-lenis-prevent-wheel>
             <div class="stack" data-stack></div>
-            <div class="rail" data-rail aria-hidden="true"></div>
+            <div class="rail" data-rail></div>
           </div>
           <div class="caption" data-caption-wrap>
             <div class="caption__text" data-caption aria-live="polite"></div>
             <div class="caption__actions">
-              <button class="icon-btn" data-skip aria-label="Skip past projects"></button>
               <button class="icon-btn icon-btn--accent" data-shuffle aria-label="Show a random project"></button>
             </div>
           </div>
@@ -52,11 +51,7 @@
       </section>
 
       <section class="statement" data-statement>
-        <h2 class="statement__title">
-          <span data-statement-before></span>
-          <span class="statement__word-wrap"><span class="statement__word" data-statement-word></span></span>
-          <span data-statement-after></span>
-        </h2>
+        <h2 class="statement__title" data-statement-title></h2>
         <p class="statement__sub" data-statement-sub></p>
       </section>
 
@@ -75,7 +70,10 @@
           <p data-approach-body></p>
           <a class="mini-card" data-approach-link></a>
         </div>
-        <div class="accordion" data-accordion></div>
+        <div class="approach__side">
+          <div class="orb" aria-hidden="true"></div>
+          <div class="accordion" data-accordion></div>
+        </div>
       </section>
 
       <section class="team" id="team" data-team>
@@ -95,24 +93,6 @@
           </div>
         </div>
       </section>
-
-      <section class="contact" id="contact" data-contact>
-        <div class="contact__card" data-contact-card>
-          <div class="contact__intro">
-            <h2 class="two-tone" data-contact-title></h2>
-            <div class="email-pill">
-              <a data-email></a>
-              <button type="button" data-copy>Copy</button>
-            </div>
-          </div>
-          <form class="convo" data-convo novalidate>
-            <span class="convo__handle" aria-hidden="true"></span>
-            <div class="convo__avatar" data-convo-avatar aria-hidden="true"></div>
-            <div class="convo__history" data-convo-history></div>
-            <div class="convo__step" data-convo-step></div>
-          </form>
-        </div>
-      </section>
     </main>
 
     <footer class="footer" data-footer>
@@ -126,6 +106,35 @@
           <rect width="100%" height="100%" filter="url(#cloud-filter)" />
         </svg>
       </div>
+      <section class="contact" id="contact" data-contact>
+        <div class="contact__card" data-contact-card>
+          <div class="contact__intro">
+            <h2 class="two-tone" data-contact-title></h2>
+            <div class="email-pill">
+              <a data-email></a>
+              <button type="button" data-copy>Copy</button>
+            </div>
+          </div>
+          <div class="convo-slot">
+            <div class="convo__drop" data-convo-drop>
+              <div class="convo" data-convo-card>
+                <div class="convo__grip" data-convo-grip aria-hidden="true"><span class="convo__handle"></span></div>
+                <div class="convo__bar" data-convo-bar>
+                  <button type="button" class="convo__back" data-back>&larr; Back</button>
+                  <span class="convo__hint">Enter ↵</span>
+                </div>
+                <form class="convo__screen" data-convo novalidate>
+                  <div class="convo__avatar" data-convo-avatar aria-hidden="true">
+                    <span class="convo__head"></span><span class="convo__body"></span><span class="convo__initials"></span>
+                  </div>
+                  <div class="convo__history" data-convo-history></div>
+                  <div class="convo__step" data-convo-step></div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
       <div class="footer__inner">
         <div class="footer__brand">Sitekeep</div>
         <nav class="footer__cols" data-footer-cols aria-label="Footer"></nav>

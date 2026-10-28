@@ -44,7 +44,7 @@ const firstMediaReady = new Promise((resolve) => {
 const deepLink = projects.findIndex((p) => p.slug === slugFromPath())
 
 ;(async () => {
-  if (deepLink > -1) showcase.scrollToIndex(deepLink, { immediate: true })
+  if (deepLink > -1) showcase.select(deepLink)
   await runPreloader({ site, showcase, header, reduced, firstMediaReady, skip: deepLink > -1 })
   lenis.start()
   ScrollTrigger.refresh()

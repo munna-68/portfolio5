@@ -1,4 +1,5 @@
 import gsap from 'gsap'
+import Lenis from 'lenis'
 import { createMedia } from './media.js'
 import { icons } from './icons.js'
 import { $, $$, escapeHTML } from './utils.js'
@@ -7,14 +8,16 @@ import { $, $$, escapeHTML } from './utils.js'
  * Expanded project view.
  * Opening borrows the clicked card's media element (so a playing video keeps playing),
  * FLIPs it from the card's rect to the hero slot, and fades the page to dark.
- * Inside, sections declare data-bg="dark|accent|light" and the background
- * follows whichever section is crossing the middle of the screen.
+ * Inside, sections declare data-bg="dark|accent|light". The background is tied to the scroll
+ * position: around each section boundary it blends from one colour to the next over BLEND of
+ * the viewport, so it changes as smoothly as you scroll. The view has its own Lenis instance.
  */
 
 const DARK = '#0c0c0c'
 const LIGHT = '#f4f3f0'
 const CARD_RADIUS = 22
 const HERO_RADIUS = 20
+const BLEND = 0.6 // share of the viewport height over which two section colours cross-fade
 
 function isLight(hex) {
   const m = hex.replace('#', '').match(/.{2}/g)
@@ -31,8 +34,11 @@ export function initDetail({ projects, lenis, bus, showcase, header, reduced }) 
   let openIndex = null
   let busy = false
   let borrowed = null // { media, home, card }
-  let io = null
   let galleryIO = null
+  let inner = null // the detail view's own Lenis
+  let contentRO = null
+  let zones = [] // [{ top, color, light }] per data-bg section, in scroller coordinates
+  let lightNow = null
   let lastFocus = null
 
   function bgFor(key, p) {
@@ -44,8 +50,39 @@ export function initDetail({ projects, lenis, bus, showcase, header, reduced }) 
   function applyBg(key, p) {
     const { color, light } = bgFor(key, p)
     el.style.backgroundColor = color
+    setLight(light)
+  }
+
+  function setLight(light) {
+    if (light === lightNow) return
+    lightNow = light
     el.classList.toggle('detail--light', light)
     header.setMode(light ? 'light' : 'dark')
+  }
+
+  function measureZones(p) {
+    const scroller = $('[data-scroller]', el)
+    zones = $$('[data-bg]', el).map((sec) => ({ top: sec.offsetTop, ...bgFor(sec.dataset.bg, p) }))
+    paint(scroller.scrollTop)
+  }
+
+  /** Background for the current scroll position, cross-fading near each section boundary. */
+  function paint(scrollTop) {
+    if (!zones.length || !el.classList.contains('is-settled')) return
+    const vh = innerHeight
+    const mid = scrollTop + vh / 2
+    let k = 0
+    while (k < zones.length - 1 && mid >= zones[k + 1].top) k++
+    let from = zones[k]
+    let to = zones[k]
+    let t = 0
+    const band = (vh * BLEND) / 2
+    const next = zones[k + 1]
+    if (next && mid > next.top - band) [to, t] = [next, (mid - (next.top - band)) / (2 * band)]
+    else if (k > 0 && mid < zones[k].top + band) [from, to, t] = [zones[k - 1], zones[k], 0.5 + (mid - zones[k].top) / (2 * band)]
+    t = t * t * (3 - 2 * t) // smoothstep
+    el.style.backgroundColor = gsap.utils.interpolate(from.color, to.color, t)
+    setLight(t < 0.5 ? from.light : to.light)
   }
 
   function render(p, i) {
@@ -54,6 +91,7 @@ export function initDetail({ projects, lenis, bus, showcase, header, reduced }) 
     el.innerHTML = `
       <button class="detail__close" data-close aria-label="Close project">${icons.close}<span>Close</span></button>
       <div class="detail__scroller" data-scroller data-lenis-prevent tabindex="-1">
+        <div class="detail__content" data-content>
         <section class="detail__intro" data-bg="dark">
           <div class="detail__hero" data-hero>
             <button class="detail__expand" data-expand aria-label="View fullscreen">${icons.expand}</button>
@@ -86,6 +124,32 @@ export function initDetail({ projects, lenis, bus, showcase, header, reduced }) 
             : ''
         }
         ${p.gallery?.length ? `<section class="detail__gallery" data-bg="light" data-gallery></section>` : ''}
+        ${
+          p.more?.length
+            ? `<section class="detail__more" data-bg="light">
+                <div class="orb detail__orb" aria-hidden="true"></div>
+                <div class="more__intro">
+                  <p class="more__kicker">${icons.sparkle}<span>More from this project</span></p>
+                  <p class="more__text">Pick a theme to see how we approached ${escapeHTML(p.client)}: ${p.more.map((m) => `<button class="more__link" data-more-go="${p.more.indexOf(m)}">${escapeHTML(m.label.toLowerCase())}</button>`).join(', ')}.</p>
+                </div>
+                <div class="more-stack" data-more>
+                  ${p.more
+                    .map(
+                      (m, k) => `<article class="more-card">
+                        <button class="more-card__tab" data-more-go="${k}" style="top:${28 + k * 4}px">${escapeHTML(m.label)}</button>
+                        <div class="more-card__body">
+                          <span class="more-card__num">${String(k + 1).padStart(2, '0')} / ${String(p.more.length).padStart(2, '0')}</span>
+                          <h3>${escapeHTML(m.title)}</h3>
+                          <p>${escapeHTML(m.body)}</p>
+                        </div>
+                      </article>`,
+                    )
+                    .join('')}
+                  <button class="more-stack__next" data-more-next aria-label="Next theme">${icons.chevronRight}</button>
+                </div>
+              </section>`
+            : ''
+        }
         <section class="detail__next" data-bg="dark">
           <p class="detail__label">Next project</p>
           <button class="next-card" data-next>
@@ -97,6 +161,7 @@ export function initDetail({ projects, lenis, bus, showcase, header, reduced }) 
             <span class="next-card__arrow">${icons.arrowRight}</span>
           </button>
         </section>
+        </div>
       </div>`
 
     const gallery = $('[data-gallery]', el)
@@ -118,6 +183,7 @@ export function initDetail({ projects, lenis, bus, showcase, header, reduced }) 
     const nextPoster = next.cover.type === 'video' ? next.cover.poster : next.cover.type === 'image' ? next.cover.src : null
     if (nextPoster) $('[data-next-media]', el).style.backgroundImage = `url("${nextPoster}")`
 
+    initMore()
     $('[data-close]', el).addEventListener('click', requestClose)
     $('[data-next]', el).addEventListener('click', () => swap((i + 1) % n, { push: 'replace' }))
     $('[data-expand]', el).addEventListener('click', () => {
@@ -126,20 +192,54 @@ export function initDetail({ projects, lenis, bus, showcase, header, reduced }) 
     })
 
     const scroller = $('[data-scroller]', el)
-    io = new IntersectionObserver(
-      (entries) => entries.forEach((e) => e.isIntersecting && applyBg(e.target.dataset.bg, p)),
-      { root: scroller, rootMargin: '-50% 0px -50% 0px' },
-    )
-    $$('[data-bg]', el).forEach((s) => io.observe(s))
+    inner = new Lenis({ wrapper: scroller, content: $('[data-content]', el), lerp: reduced ? 1 : 0.1, touchMultiplier: 1.4 })
+    inner.on('scroll', ({ scroll }) => paint(scroll))
+    contentRO = new ResizeObserver(() => measureZones(p)) // images and the gallery change section heights
+    contentRO.observe($('[data-content]', el))
     document.title = `${p.client} · ${p.title} | Sitekeep`
     header.setLabel(p.title)
   }
 
-  function teardown() {
-    io?.disconnect()
-    galleryIO?.disconnect()
-    io = galleryIO = null
+  /** "More from this project": a small stack of theme cards with folder tabs down the right edge. */
+  function initMore() {
+    const stack = $('[data-more]', el)
+    if (!stack) return
+    const cards = $$('.more-card', stack)
+    const len = cards.length
+    let front = 0
+    const place = (instant) => {
+      cards.forEach((c, k) => {
+        const d = (k - front + len) % len
+        c.style.zIndex = String(len - d)
+        c.classList.toggle('is-front', d === 0)
+        gsap.to(c, { x: d * 30, y: d * 8, rotation: d * 1.6, scale: 1 - d * 0.035, duration: instant || reduced ? 0 : 0.8, ease: 'expo.out' })
+      })
+    }
+    const show = (k) => {
+      if (k === front) return
+      const leaving = cards[front]
+      front = k
+      if (!reduced) gsap.fromTo(leaving, { x: 0 }, { x: -60, rotation: -4, duration: 0.25, ease: 'power2.out', onComplete: place })
+      else place()
+      if (reduced) return
+      leaving.style.zIndex = String(len + 1)
+    }
+    $$('[data-more-go]', el).forEach((b) => b.addEventListener('click', () => show(Number(b.dataset.moreGo))))
+    $('[data-more-next]', stack).addEventListener('click', () => show((front + 1) % len))
+    place(true)
   }
+
+  function teardown() {
+    galleryIO?.disconnect()
+    contentRO?.disconnect()
+    inner?.destroy()
+    galleryIO = contentRO = inner = null
+    zones = []
+  }
+
+  // The detail view's Lenis rides the same ticker as the page's; re-measure on resize.
+  gsap.ticker.add((t) => inner?.raf(t * 1000))
+  addEventListener('resize', () => openIndex !== null && measureZones(projects[openIndex]))
 
   function borrowMedia(i) {
     const card = showcase.cards[i]
@@ -177,9 +277,9 @@ export function initDetail({ projects, lenis, bus, showcase, header, reduced }) 
 
     render(p, i)
     el.hidden = false
-    el.classList.remove('detail--light')
+    lightNow = null
+    setLight(false)
     el.style.backgroundColor = 'rgba(12,12,12,0)'
-    header.setMode('dark')
     const card = borrowMedia(i)
     const hero = $('[data-hero]', el)
 
@@ -194,6 +294,7 @@ export function initDetail({ projects, lenis, bus, showcase, header, reduced }) 
         onComplete: () => {
           busy = false
           el.classList.add('is-settled')
+          measureZones(p)
           $('[data-scroller]', el).focus({ preventScroll: true })
         },
       })
@@ -212,12 +313,12 @@ export function initDetail({ projects, lenis, bus, showcase, header, reduced }) 
   function close({ push = null } = {}) {
     if (busy || openIndex === null) return
     busy = true
-    el.classList.remove('is-settled')
     const scroller = $('[data-scroller]', el)
     const card = showcase.cards[openIndex]
     const d = reduced ? 0 : 1
 
     const flip = () => {
+      el.classList.remove('is-settled')
       teardown()
       applyBg('dark', projects[openIndex])
       const hero = $('[data-hero]', el)
@@ -249,7 +350,8 @@ export function initDetail({ projects, lenis, bus, showcase, header, reduced }) 
     }
 
     if (scroller.scrollTop > 2) {
-      gsap.to(scroller, { scrollTop: 0, duration: reduced ? 0 : Math.min(0.9, 0.3 + scroller.scrollTop / 4000), ease: 'power3.inOut', onComplete: flip })
+      const duration = reduced ? 0 : Math.min(0.9, 0.3 + scroller.scrollTop / 4000)
+      inner.scrollTo(0, { duration, easing: (t) => 1 - (1 - t) ** 3, force: true, lock: true, onComplete: flip })
     } else flip()
 
     if (push === 'replace') history.replaceState({}, '', '/')
@@ -268,12 +370,13 @@ export function initDetail({ projects, lenis, bus, showcase, header, reduced }) 
       onComplete: () => {
         teardown()
         returnMedia()
-        showcase.scrollToIndex(i, { immediate: true })
+        showcase.select(i)
         openIndex = i
         const p = projects[i]
         render(p, i)
         borrowMedia(i)
         applyBg('dark', p)
+        measureZones(p)
         const sc = $('[data-scroller]', el)
         gsap.fromTo(sc, { autoAlpha: 0, y: 40 }, { autoAlpha: 1, y: 0, duration: reduced ? 0 : 0.8, ease: 'expo.out', onComplete: () => (busy = false) })
         pushUrl(p, push)
@@ -295,7 +398,8 @@ export function initDetail({ projects, lenis, bus, showcase, header, reduced }) 
     const i = projects.findIndex((p) => p.slug === slug)
     if (i === -1) close()
     else if (openIndex === null) {
-      showcase.scrollToIndex(i, { immediate: true })
+      lenis.scrollTo(0, { immediate: true, force: true })
+      showcase.select(i)
       open(i, { push: null })
     } else swap(i, { push: null })
   })
