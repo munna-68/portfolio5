@@ -6,10 +6,9 @@ import { $, $$, escapeHTML } from './utils.js'
 import { setTheme, resetTheme } from './theme.js'
 
 /**
- * Card stack hero. The stack is a real 3D scene (perspective on .stack, cards pushed back in z
- * and hinged on their top edge), and it is cyclic: the active card sits in front, the next two
- * peek out underneath. Moving forward flips the front card up and away off the top and it
- * rejoins at the back; moving back drops the card in from above, unfolding as it lands.
+ * Card stack hero. The stack is cyclic: the active card sits in front, the next two peek out
+ * underneath. Moving forward throws the front card off the top of the screen and it rejoins
+ * at the back; moving back drops it in from above.
  * Wheel/trackpad over the stack (or a sideways swipe on touch) switches cards; anywhere else
  * the page scrolls normally. The active rail dot fills up like a progress bar, then autoplays
  * to the next card.
@@ -19,20 +18,16 @@ const AUTOPLAY_DEFAULT = 7 // seconds per card when the cover has no usable dura
 const AUTOPLAY_MIN = 5
 const AUTOPLAY_MAX = 12
 
-// Depth scale: 1 at a 600px-wide card, easing off a little for very wide cards (as the original does).
-function depthScale(width) {
-  const shrink = width <= 600 ? 1 : 1 - 0.25 * Math.min(1, (width - 600) / 1400)
-  return (width / 600) * shrink
+// Resting position for a card d places behind the active one.
+function stateFor(d) {
+  if (d === 0) return { yPercent: 0, scale: 1, autoAlpha: 1 }
+  if (d === 1) return { yPercent: 5, scale: 0.94, autoAlpha: 1 }
+  if (d === 2) return { yPercent: 9.5, scale: 0.88, autoAlpha: 1 }
+  return { yPercent: 13, scale: 0.82, autoAlpha: 0 }
 }
-// Resting position for a card d places behind the active one: pushed back in z and dropped a
-// little, so with perspective it peeks out underneath. Beyond d = 2 cards hide behind the third.
-function stateFor(d, s) {
-  const k = Math.min(d, 6)
-  return { z: -(k ** 0.95) * 150 * s, y: 36 * s * Math.min(2, k) ** 0.95, rotationX: 0, autoAlpha: d <= 4 ? 1 : 0 }
-}
-const shadeFor = (d) => (d === 0 ? 0 : d === 1 ? 0.05 : 0.1)
-// Folded up and lifted above the stack: where cards come from (intro, going back).
-const FOLDED = (s) => ({ rotationX: 80, y: -350 * s, filter: 'blur(8px)', autoAlpha: 1 })
+const shadeFor = (d) => (d === 0 ? 0 : d === 1 ? 0.16 : 0.3)
+// Off the top of the screen, slightly tipped, as if flicked away.
+const FLOWN = { yPercent: -150, rotation: -5, scale: 1, autoAlpha: 1 }
 
 export function initShowcase({ projects, bus, reduced }) {
   const section = $('[data-showcase]')
@@ -117,41 +112,44 @@ export function initShowcase({ projects, bus, reduced }) {
     bus.emit('project', i)
   }
 
-  let s = 1 // depth scale, from the card width
-  const measure = () => (s = depthScale(stack.offsetWidth || 600))
-
   function layout({ instant = false, prev = -1, dir = 1 } = {}) {
-    measure()
-    const animate = !instant && !reduced
+    const dur = instant || reduced ? 0 : 1
     cards.forEach((card, k) => {
       const d = depth(k)
-      const state = stateFor(d, s)
       card.style.zIndex = String(n - d)
-      gsap.to(card.shade, { opacity: shadeFor(d), duration: animate ? 0.6 : 0, overwrite: 'auto' })
+      gsap.to(card.shade, { opacity: shadeFor(d), duration: dur * 0.8, ease: 'power2.out', overwrite: 'auto' })
 
-      if (animate && dir > 0 && k === prev) {
-        // flipped up and away off the top, then quietly rejoins the back of the stack
+      if (dur && dir > 0 && k === prev) {
+        // thrown off the top, then quietly rejoins the back of the stack
         card.style.zIndex = String(n + 1)
-        gsap.killTweensOf(card)
-        gsap
-          .timeline({ onComplete: () => gsap.set(card, { ...stateFor(depth(k), s), filter: 'none', zIndex: n - depth(k) }) })
-          .to(card, { rotationX: 80, y: -card.offsetHeight * 1.4, z: 20 * s, duration: 0.7, ease: 'power3.out' }, 0)
-          .to(card, { autoAlpha: 0, filter: 'blur(2px)', duration: 0.45, ease: 'power1.in' }, 0)
+        gsap.to(card, {
+          ...FLOWN,
+          duration: 0.85,
+          ease: 'power3.in',
+          overwrite: true,
+          onComplete: () => {
+            const dd = depth(k)
+            card.style.zIndex = String(n - dd)
+            gsap.set(card, { ...stateFor(Math.max(dd, 3)), rotation: 0 })
+            if (dd < 3) gsap.to(card, { ...stateFor(dd), duration: 0.6, ease: 'expo.out' })
+          },
+        })
         return
       }
-      if (animate && dir < 0 && k === active) {
-        // dropped back in from above, unfolding as it lands
+      if (dur && dir < 0 && k === active) {
+        // dropped back in from above
         card.style.zIndex = String(n + 1)
-        gsap.killTweensOf(card)
-        gsap.fromTo(
-          card,
-          { ...FOLDED(s), z: state.z + 50 * s },
-          { ...state, filter: 'blur(0px)', duration: 0.8, ease: 'back.out(1.1)', onComplete: () => gsap.set(card, { filter: 'none', zIndex: n - depth(k) }) },
-        )
+        gsap.fromTo(card, FLOWN, {
+          ...stateFor(0),
+          rotation: 0,
+          duration: 1.1,
+          ease: 'expo.out',
+          overwrite: true,
+          onComplete: () => (card.style.zIndex = String(n - depth(k))),
+        })
         return
       }
-      if (!animate) return void gsap.set(card, { ...state, filter: 'none' })
-      gsap.to(card, { ...state, duration: 0.65, ease: 'power3.out', overwrite: 'auto' })
+      gsap.to(card, { ...stateFor(d), y: 0, rotation: 0, duration: dur, delay: dur && dir > 0 ? 0.12 : 0, ease: 'expo.out', overwrite: 'auto' })
     })
   }
 
@@ -201,11 +199,6 @@ export function initShowcase({ projects, bus, reduced }) {
   bus.on('detail:close', () => autoplay.block('detail', false))
 
   /* ── Wheel / trackpad over the stack switches cards instead of scrolling the page ── */
-  // While the wheel builds up, the front card leans up a few px (back cards less), then springs back.
-  const nudge = { v: 0 }
-  const applyNudge = () => cards.forEach((c, k) => (c.style.translate = `0 ${-nudge.v * 7 * s * 0.5 ** depth(k)}px`))
-  const setNudge = (v, dur = 0.25) => gsap.to(nudge, { v, duration: dur, ease: 'power3.out', overwrite: true, onUpdate: applyNudge })
-  let nudgeTimer = 0
   let acc = 0
   let lastWheel = 0
   let lastMag = 0
@@ -230,15 +223,12 @@ export function initShowcase({ projects, bus, reduced }) {
       lastMag = mag
       if (gap > 220) acc = 0
       acc += delta
-      clearTimeout(nudgeTimer)
-      nudgeTimer = setTimeout(() => ((acc = 0), setNudge(0, 0.5)), 180)
       if (Math.abs(acc) >= 28) {
         step(Math.sign(acc))
         acc = 0
         coasting = true
         lockUntil = now + 420
-        setNudge(0, 0.5)
-      } else setNudge(gsap.utils.clamp(-1, 1, acc / 28))
+      }
     },
     { passive: false },
   )
@@ -283,34 +273,27 @@ export function initShowcase({ projects, bus, reduced }) {
   gsap.set('[data-caption-wrap], [data-rail]', { autoAlpha: 0 })
   go(0, { instant: true })
 
-  /** Preloader hands off to this: the cards drop in from above, back ones first, unfolding as they land. */
+  /** Preloader hands off to this: cards fly up from below and settle into the stack. */
   function intro() {
     visible = true
-    measure()
     const tl = gsap.timeline({ onComplete: () => autoplay.block('intro', false) })
-    cards.forEach((card, k) => {
-      const d = depth(k)
-      const state = stateFor(d, s)
+    // back cards land first, the active card lands last on top
+    const order = [...cards].sort((a, b) => depth(cards.indexOf(b)) - depth(cards.indexOf(a)))
+    order.forEach((card, idx) => {
+      const d = depth(cards.indexOf(card))
+      const s = stateFor(d)
       card.style.zIndex = String(n - d)
-      gsap.set(card.shade, { opacity: shadeFor(d) })
-      if (d > 4 || reduced) return void gsap.set(card, { ...state, filter: 'none' })
       tl.fromTo(
         card,
-        { ...FOLDED(s), z: state.z },
-        { ...state, filter: 'blur(0px)', duration: 1.4, ease: 'expo.out', clearProps: 'filter' },
-        0.2 + (4 - d) * 0.06,
+        { y: innerHeight * 0.9, yPercent: s.yPercent, scale: s.scale * 0.92, rotation: idx % 2 ? 2.5 : -2.5, autoAlpha: d < 3 ? 1 : 0 },
+        { y: 0, scale: s.scale, rotation: 0, autoAlpha: s.autoAlpha, duration: reduced ? 0 : 1.35, ease: 'expo.out' },
+        reduced ? 0 : Math.max(0, idx - (n - 3)) * 0.09,
       )
+      gsap.set(card.shade, { opacity: shadeFor(d) })
     })
-    tl.to('[data-caption-wrap], [data-rail]', { autoAlpha: 1, duration: 0.8, ease: 'power2.out' }, reduced ? 0 : 0.7)
+    tl.to('[data-caption-wrap], [data-rail]', { autoAlpha: 1, duration: 0.8, ease: 'power2.out' }, reduced ? 0 : 0.6)
     return tl
   }
-
-  // Keep the depth in proportion when the card size changes.
-  let resizeRaf = 0
-  addEventListener('resize', () => {
-    cancelAnimationFrame(resizeRaf)
-    resizeRaf = requestAnimationFrame(() => visible && layout({ instant: true }))
-  })
 
   return {
     intro,

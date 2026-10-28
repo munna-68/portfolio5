@@ -45,6 +45,12 @@ export async function runPreloader({ site, showcase, header, reduced, firstMedia
     .to(headline, { opacity: 0, filter: 'blur(14px)', scale: 0.96, y: -16, duration: 0.6, ease: 'power2.in' }, 0)
     .add(showcase.intro(), 0.35)
   header.reveal(out, 0.9)
-  out.add(() => document.body.classList.remove('is-loading'), 0.9)
+  out.add(() => {
+    // the statement (on the first screen on phones) fades in as the cards land
+    const rest = $$('.main > :not(.showcase), .footer')
+    gsap.set(rest, { autoAlpha: 0 })
+    document.body.classList.remove('is-loading')
+    gsap.to(rest, { autoAlpha: 1, duration: 0.8, delay: 0.3, ease: 'power2.out', clearProps: 'opacity,visibility' })
+  }, 0.9)
   await out
 }
