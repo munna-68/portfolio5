@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Sitekeep · Websites, kept.</title>
+    <meta name="description" content="Sitekeep designs, builds and keeps fast, beautiful websites for ambitious businesses." />
+    <meta name="theme-color" content="#ffffff" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  </head>
+  <body class="is-loading">
+    <div class="preloader" aria-hidden="true">
+      <p class="preloader__headline" data-preloader-headline></p>
+    </div>
+
+    <header class="header" data-header>
+      <a class="header__brand" href="/" data-home aria-label="Sitekeep home">
+        <svg class="logo-mark" viewBox="0 0 46 30" aria-hidden="true">
+          <rect class="logo-mark__base" x="0" y="17" width="46" height="13" rx="2.5" />
+          <rect class="logo-mark__merlon" x="0" y="3" width="11" height="16" rx="2.5" />
+          <rect class="logo-mark__merlon logo-mark__merlon--accent" x="17.5" y="0" width="11" height="19" rx="2.5" />
+          <rect class="logo-mark__merlon" x="35" y="3" width="11" height="16" rx="2.5" />
+        </svg>
+        <span class="header__divider" aria-hidden="true"></span>
+        <span class="header__label" data-header-label>Sitekeep</span>
+      </a>
+      <a class="header__news" href="#contact" data-news>
+        <span class="header__news-dot" aria-hidden="true"></span>
+        <span data-news-label></span>
+      </a>
+      <a class="pill-btn header__cta" href="#contact" data-cta>Get started</a>
+    </header>
+
+    <main class="main" data-main>
+      <section class="showcase" id="work" data-showcase aria-label="Selected work">
+        <div class="showcase__pin">
+          <div class="showcase__stage">
+            <div class="stack" data-stack></div>
+            <div class="rail" data-rail aria-hidden="true"></div>
+          </div>
+          <div class="caption" data-caption-wrap>
+            <div class="caption__text" data-caption aria-live="polite"></div>
+            <div class="caption__actions">
+              <button class="icon-btn" data-skip aria-label="Skip past projects"></button>
+              <button class="icon-btn icon-btn--accent" data-shuffle aria-label="Show a random project"></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="statement" data-statement>
+        <h2 class="statement__title">
+          <span data-statement-before></span>
+          <span class="statement__word-wrap"><span class="statement__word" data-statement-word></span></span>
+          <span data-statement-after></span>
+        </h2>
+        <p class="statement__sub" data-statement-sub></p>
+      </section>
+
+      <section class="testimonials" id="clients" data-testimonials aria-label="What clients say">
+        <div class="testimonials__card">
+          <div class="testimonials__pager" data-t-pager></div>
+          <blockquote class="testimonials__quote" data-t-quote></blockquote>
+          <div class="testimonials__person" data-t-person></div>
+        </div>
+        <div class="testimonials__tiles" data-t-tiles aria-hidden="true"></div>
+      </section>
+
+      <section class="approach" id="approach" data-approach>
+        <div class="approach__intro">
+          <h2 class="two-tone" data-approach-title></h2>
+          <p data-approach-body></p>
+          <a class="mini-card" data-approach-link></a>
+        </div>
+        <div class="accordion" data-accordion></div>
+      </section>
+
+      <section class="team" id="team" data-team>
+        <div class="team__intro">
+          <h2 class="two-tone" data-team-title></h2>
+          <p data-team-body></p>
+          <div class="marquee" data-marquee><div class="marquee__track"></div></div>
+        </div>
+        <div class="team__people" data-people>
+          <div class="team__bubbles" data-bubbles></div>
+          <div class="team__meta">
+            <div class="team__name-wrap"><div data-person-name></div></div>
+            <div class="team__actions">
+              <a class="icon-btn icon-btn--dark" data-person-link aria-label="Profile"></a>
+              <button class="icon-btn" data-person-next aria-label="Next team member"></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="contact" id="contact" data-contact>
+        <div class="contact__card" data-contact-card>
+          <div class="contact__intro">
+            <h2 class="two-tone" data-contact-title></h2>
+            <div class="email-pill">
+              <a data-email></a>
+              <button type="button" data-copy>Copy</button>
+            </div>
+          </div>
+          <form class="convo" data-convo novalidate>
+            <span class="convo__handle" aria-hidden="true"></span>
+            <div class="convo__avatar" data-convo-avatar aria-hidden="true"></div>
+            <div class="convo__history" data-convo-history></div>
+            <div class="convo__step" data-convo-step></div>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer" data-footer>
+      <div class="footer__sky" aria-hidden="true">
+        <svg class="footer__clouds" preserveAspectRatio="none">
+          <filter id="cloud-filter" x="0" y="0" width="100%" height="100%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.0035 0.009" numOctaves="5" seed="8" />
+            <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.6 -0.62" />
+            <feGaussianBlur stdDeviation="1.2" />
+          </filter>
+          <rect width="100%" height="100%" filter="url(#cloud-filter)" />
+        </svg>
+      </div>
+      <div class="footer__inner">
+        <div class="footer__brand">Sitekeep</div>
+        <nav class="footer__cols" data-footer-cols aria-label="Footer"></nav>
+      </div>
+      <div class="footer__bottom">
+        <span data-footer-copy></span>
+        <span data-footer-legal></span>
+      </div>
+    </footer>
+
+    <div class="detail" data-detail hidden></div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
