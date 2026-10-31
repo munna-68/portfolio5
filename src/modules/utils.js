@@ -24,6 +24,13 @@ export function createBus() {
       map.get(evt).add(fn)
       return () => map.get(evt).delete(fn)
     },
+    once(evt, fn) {
+      const off = this.on(evt, (payload) => {
+        off()
+        fn(payload)
+      })
+      return off
+    },
     emit(evt, payload) {
       map.get(evt)?.forEach((fn) => fn(payload))
     },

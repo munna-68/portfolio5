@@ -174,7 +174,26 @@ export function initDetail({ projects, lenis, bus, showcase, header, reduced }) 
         const media = createMedia(m, { interactive: m.type === 'youtube' })
         const fig = document.createElement('figure')
         fig.className = 'detail__figure'
-        fig.appendChild(media.el)
+
+        const frame = document.createElement('div')
+        frame.className = 'detail__frame'
+
+        const screen = document.createElement('div')
+        screen.className = 'detail__frame-screen'
+        screen.appendChild(media.el)
+
+        if (m.frame !== false) {
+          const bar = document.createElement('div')
+          bar.className = 'detail__frame-bar'
+          bar.setAttribute('aria-hidden', 'true')
+          bar.innerHTML = '<span class="detail__frame-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span><span class="detail__frame-url"></span>'
+          frame.appendChild(bar)
+        } else {
+          frame.classList.add('detail__frame--canvas')
+        }
+
+        frame.appendChild(screen)
+        fig.appendChild(frame)
         fig.media = media
         gallery.appendChild(fig)
         galleryIO.observe(fig)
@@ -405,6 +424,7 @@ export function initDetail({ projects, lenis, bus, showcase, header, reduced }) 
   })
 
   bus.on('open', ({ index }) => open(index))
+  bus.on('close', () => close({ push: 'replace' }))
 
   return {
     open,
@@ -416,6 +436,6 @@ export function initDetail({ projects, lenis, bus, showcase, header, reduced }) 
 }
 
 export function slugFromPath() {
-  const m = location.pathname.match(/^\/work\/([^/]+)\/?$/)
+  const m = location.pathname.match(/^\/(?:work|showcase)\/([^/]+)\/?$/)
   return m ? decodeURIComponent(m[1]) : null
 }

@@ -48,6 +48,7 @@ const deepLink = projects.findIndex((p) => p.slug === slugFromPath())
   await runPreloader({ site, showcase, header, reduced, firstMediaReady, skip: deepLink > -1 })
   lenis.start()
   ScrollTrigger.refresh()
+  bus.emit('ready')
   if (deepLink > -1) {
     history.replaceState({}, '', '/')
     detail.open(deepLink, { push: 'push' })

@@ -12,7 +12,7 @@ import { $, escapeHTML, initials, twoTone } from './utils.js'
  * The sheet drops in when it scrolls into view and can be tugged by its handle.
  * Submits JSON to site.formEndpoint if set, otherwise opens a pre-filled email.
  */
-export function initContact({ site, reduced }) {
+export function initContact({ site, bus, reduced }) {
   const c = site.contact
   $('[data-contact-title]').innerHTML = twoTone(c.title)
   const emailLink = $('[data-email]')
@@ -218,6 +218,14 @@ export function initContact({ site, reduced }) {
   renderStep()
   initScrollMotion(reduced)
   initGrip(card, reduced)
+
+  if (bus) {
+    bus.on('contact:focus', () => {
+      engaged = true
+      const field = $('#convo-input', stepEl) || $('.chip', stepEl)
+      field?.focus?.({ preventScroll: true })
+    })
+  }
 }
 
 /** Tug the sheet by its handle: it follows with some resistance, tilts, and springs back on release. */
